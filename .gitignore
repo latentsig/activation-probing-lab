@@ -1,0 +1,17 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Generated experiment material
+data/generated/
+runs/
+
+# Local model and service caches
+.cache/
+wandb/

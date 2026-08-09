@@ -1,0 +1,53 @@
+seed: 42
+
+model:
+  name: Qwen/Qwen3-4B
+  revision: main
+  max_length: 192
+
+data:
+  train_path: data/generated/train.jsonl
+  probe_path: data/generated/probe.jsonl
+  train_examples: 1200
+  probe_train_examples: 512
+  probe_id_examples: 256
+  probe_transfer_examples: 256
+  shortcut_strength: 0.95
+
+train:
+  output_dir: runs/qwen3-4b-toy/checkpoints
+  max_steps: 100
+  batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.0002
+  warmup_ratio: 0.05
+  lr_scheduler_type: cosine
+  logging_steps: 5
+  save_steps: 20
+  gradient_checkpointing: true
+  tf32: true
+  max_grad_norm: 0.3
+  lora:
+    rank: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules:
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+      - gate_proj
+      - up_proj
+      - down_proj
+
+capture:
+  output_dir: runs/qwen3-4b-toy/activations
+  layer_fractions: [0.25, 0.50, 0.75, 1.00]
+  batch_size: 8
+
+probe:
+  output_dir: runs/qwen3-4b-toy/report
+  c_grid: [0.001, 0.01, 0.1, 1.0]
+  cv_folds: 5
+  bootstrap_samples: 200
+  permutation_repeats: 10

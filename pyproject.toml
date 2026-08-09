@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "activation-probing-lab"
+version = "0.1.0"
+description = "A small, reproducible activation-probing lab for 4B parameter fine-tuning runs."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Latentsig AI Research" }]
+dependencies = [
+  "matplotlib>=3.8",
+  "numpy>=1.26",
+  "PyYAML>=6.0",
+  "scikit-learn>=1.4",
+]
+
+[project.optional-dependencies]
+train = [
+  "accelerate>=1.0",
+  "bitsandbytes>=0.45",
+  "datasets>=3.0",
+  "peft>=0.15",
+  "torch>=2.3",
+  "transformers>=4.51,<6",
+]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.9",
+]
+
+[project.scripts]
+apl = "activation_probing_lab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

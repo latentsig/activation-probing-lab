@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this lab, please cite the repository."
+title: "Activation Probing Lab"
+type: software
+authors:
+  - name: "Latentsig AI Research"
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/latentsig/activation-probing-lab"
+url: "https://latentsig.com/insights/latent-signals-activation-probing/"
