@@ -19,7 +19,15 @@ def _loss_history(config: dict[str, Any]) -> list[tuple[int, float]]:
     if (train_dir / "trainer_state.json").exists():
         state_paths.append(train_dir / "trainer_state.json")
     if not state_paths:
-        return []
+        manifest_path = train_dir / "run_manifest.json"
+        if not manifest_path.exists():
+            return []
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        return [
+            (int(entry["step"]), float(entry["loss"]))
+            for entry in manifest.get("metrics", [])
+            if "step" in entry and "loss" in entry
+        ]
 
     def state_step(path: Path) -> int:
         if path.parent.name.startswith("checkpoint-"):
@@ -96,11 +104,21 @@ def plot_probe_results(config: dict[str, Any], results_path: str | Path) -> list
                 color=colors.get(fraction),
             )
         axis.axhline(0.5, color="#8a90a0", linestyle="--", linewidth=1)
+        axis.text(
+            final_step,
+            0.512,
+            "chance = 0.50",
+            ha="right",
+            va="bottom",
+            fontsize=8,
+            color="#656b78",
+        )
         axis.set_title(f"{label.title()} decodability")
-        axis.set_xlabel("Training step")
+        axis.set_xlabel("Optimizer update (step)")
+        axis.set_ylabel("Transfer AUROC")
         axis.grid(alpha=0.18)
         axis.set_ylim(0.35, 1.02)
-    probe_axes[0].set_ylabel("Transfer AUROC")
+        axis.set_xlim(0, max(final_step, 1))
     probe_axes[1].legend(frameon=False, fontsize=9, loc="lower right")
     fig.suptitle("Loss and checkpoint activation probes", fontsize=15, fontweight="bold")
     fig.text(

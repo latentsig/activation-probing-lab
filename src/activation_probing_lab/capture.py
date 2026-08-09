@@ -152,6 +152,8 @@ def capture_checkpoint(
         layer_fractions=np.asarray(fractions, dtype=np.float32),
         checkpoint=np.asarray(name),
         step=np.asarray(checkpoint_step(name), dtype=np.int32),
+        backend=np.asarray("cuda"),
+        activation_site=np.asarray("post_block_residual_final_prompt_token"),
     )
     print(f"Saved {activations.shape} activations to {output_path}")
 
@@ -162,9 +164,13 @@ def capture_checkpoint(
     return output_path
 
 
-def capture_all(config: dict[str, Any]) -> list[Path]:
+def capture_all_cuda(config: dict[str, Any]) -> list[Path]:
     probe_rows = read_jsonl(resolve_path(config, config["data"]["probe_path"]))
     checkpoints = discover_checkpoints(config)
     if len(checkpoints) == 1:
         print("No adapter checkpoints found. Capturing the base model only.")
     return [capture_checkpoint(config, name, path, probe_rows) for name, path in checkpoints]
+
+
+# Backwards-compatible API for callers that imported the original CUDA function directly.
+capture_all = capture_all_cuda

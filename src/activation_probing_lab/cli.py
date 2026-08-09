@@ -20,7 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("generate-data", help="Generate the shortcut-controlled toy dataset")
-    subparsers.add_parser("train", help="Fine-tune Qwen3-4B with QLoRA")
+    subparsers.add_parser("train", help="Fine-tune an adapter with the configured backend")
     subparsers.add_parser("capture", help="Capture residual-stream activations at checkpoints")
     subparsers.add_parser("probe", help="Fit controlled probes and render the report")
     smoke_parser = subparsers.add_parser(
@@ -38,13 +38,13 @@ def main() -> None:
 
         generate_toy_data(config)
     elif args.command == "train":
-        from .training import train_qlora
+        from .backends import get_backend
 
-        train_qlora(config)
+        get_backend(config).train(config)
     elif args.command == "capture":
-        from .capture import capture_all
+        from .backends import get_backend
 
-        capture_all(config)
+        get_backend(config).capture_all(config)
     elif args.command == "probe":
         from .plotting import plot_probe_results
         from .probes import run_probes

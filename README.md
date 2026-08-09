@@ -1,6 +1,6 @@
 # Activation Probing Lab
 
-A small, reproducible companion project for monitoring what a 4B language model learns during QLoRA fine-tuning.
+A small, reproducible companion project for monitoring what a 4B language model learns during LoRA or QLoRA fine-tuning on NVIDIA CUDA and Apple MLX.
 
 The lab tracks three views of the same run:
 
@@ -25,11 +25,21 @@ The probe set breaks that correlation and adds a new surface template. At every 
 
 This is a diagnostic, not a claim that a decoded feature is causally used by the model.
 
-## Model and hardware
+## Backends, models, and hardware
 
-The default model is [`Qwen/Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B), an Apache-2.0 causal language model with 4.0B parameters and 36 transformer layers. Qwen3 requires Transformers 4.51 or newer.
+The backend is selected in the experiment YAML:
+
+```yaml
+backend: cuda  # or mlx
+```
+
+Both backends write the same compressed NumPy activation schema. Dataset generation, regularized probes, controls, CSV output, and plots are backend-independent.
+
+The default CUDA model is [`Qwen/Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B), an Apache-2.0 causal language model with 4.0B parameters and 36 transformer layers. Qwen3 requires Transformers 4.51 or newer.
 
 The training path uses NF4 with double quantization and LoRA adapters. A CUDA GPU with at least 16 GB of memory is a sensible starting point for the default sequence length and batch settings. Exact memory use depends on the CUDA, PyTorch, Transformers, PEFT, and bitsandbytes versions on the machine.
+
+The MLX pilot uses [`mlx-community/Qwen3.5-4B-MLX-4bit`](https://huggingface.co/mlx-community/Qwen3.5-4B-MLX-4bit), a 4-bit conversion of `Qwen/Qwen3.5-4B`. MLX uses the Metal GPU on Apple Silicon. The current activation adapter captures the post-block residual stream from Qwen3.5's hybrid linear-attention and full-attention text model.
 
 No GPU is required for the smoke demo or unit tests.
 
@@ -94,6 +104,47 @@ runs/qwen3-4b-toy/report/probe_results.csv
 runs/qwen3-4b-toy/report/probe_trajectories.png
 runs/qwen3-4b-toy/report/probe_trajectories.svg
 ```
+
+## Run the Apple MLX pilot
+
+Create a separate Apple Silicon environment and install the MLX dependencies:
+
+```bash
+python3.13 -m venv .venv-mlx
+source .venv-mlx/bin/activate
+python -m pip install -e '.[mlx]'
+```
+
+Run the ten-update Qwen3.5 pilot and capture the base model plus checkpoints 2, 4, 6, 8, and 10:
+
+```bash
+apl --config configs/qwen3.5-4b-mlx-pilot.yaml generate-data
+apl --config configs/qwen3.5-4b-mlx-pilot.yaml train
+apl --config configs/qwen3.5-4b-mlx-pilot.yaml capture
+```
+
+The training manifest and capture timings are written to:
+
+```text
+runs/qwen3.5-4b-mlx-pilot/checkpoints/run_manifest.json
+runs/qwen3.5-4b-mlx-pilot/activations/capture_metrics.json
+```
+
+### Reference result on an M4 Max
+
+The checked pilot was run on a 40-core M4 Max with 64 GB unified memory:
+
+| Measurement | Result |
+| --- | ---: |
+| Model download | 2.9 GB, about 122 seconds |
+| Total training command | 140.4 seconds including download |
+| Warm steady-state training | about 1.56 iterations/second |
+| Training peak memory | 10.65 GB |
+| Six-checkpoint activation capture | 354.4 seconds |
+| Capture peak memory | 3.34 to 3.78 GB |
+| Activation tensor per checkpoint | `4 x 1024 x 2560` |
+
+Times vary with system load, model cache state, package versions, and thermal conditions. The pilot trains on completion tokens only, so its token throughput should not be extrapolated to long-form fine-tuning without a longer calibration run.
 
 ## Reading the plot
 

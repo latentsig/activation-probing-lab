@@ -1,4 +1,5 @@
 seed: 42
+backend: cuda
 
 model:
   name: Qwen/Qwen3-4B
